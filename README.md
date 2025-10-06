@@ -10,12 +10,8 @@ Repositori ini berisi kode dan notebook untuk pengembangan, pelatihan, dan evalu
 - [Arsitektur Model](#arsitektur-model)
 - [Dataset](#dataset)
 - [Teknologi yang Digunakan](#teknologi-yang-digunakan)
-- [Struktur Repositori](#struktur-repositori)
-- [Panduan Instalasi](#panduan-instalasi)
 - [Cara Menjalankan](#cara-menjalankan)
 - [Hasil dan Evaluasi](#hasil-dan-evaluasi)
-- [Kontribusi](#kontribusi)
-- [Lisensi](#lisensi)
 
 ## Pendahuluan
 Dalam pengembangan sistem pengenalan gambar, klasifikasi gambar makanan merupakan salah satu aplikasi yang populer dan menantang. Proyek ini berfokus pada pembangunan dan evaluasi sebuah model *deep learning* yang dapat mengenali dan mengklasifikasikan gambar makanan ke dalam berbagai kategori (misalnya, "nasi goreng", "sate", "salad", dll.).
@@ -37,17 +33,7 @@ Model ini dibangun menggunakan Keras Sequential API dengan arsitektur CNN yang e
 ## Dataset
 Model ini dilatih menggunakan dataset gambar makanan.
 
-- **Sumber Dataset**: *(Sebutkan sumber dataset Anda, misalnya: Kaggle, Food-101, atau dataset pribadi)*.
-- **Struktur Folder**: Dataset harus diatur dalam struktur folder berikut agar kompatibel dengan `ImageDataGenerator` dari Keras:
-
-Dataset Makanan New/
-├── Ayam Geprek../
-│   ├── gambar5.jpg
-│   └── gambar6.jpg
-└── Ayam Pop.../
-|   ├── gambar5.jpg
-
-
+- **Sumber Dataset**: Kaggle, dan dataset pribadi
 - **Pra-pemrosesan**: Gambar di-rescale dan di-augmentasi (rotasi, zoom, flip horizontal) untuk meningkatkan ketahanan model.
 
 ## Teknologi yang Digunakan
@@ -57,34 +43,6 @@ Dataset Makanan New/
 - **NumPy**: Untuk operasi numerik.
 - **Matplotlib & Seaborn**: Untuk visualisasi data, seperti plot histori pelatihan dan *confusion matrix*.
 - **Jupyter Notebook / Google Colab**: Untuk lingkungan pengembangan interaktif.
-
-## Panduan Instalasi
-1.  **Clone Repositori**
-    ```sh
-    git clone [https://github.com/nama-pengguna-anda/nama-repositori-anda.git](https://github.com/nama-pengguna-anda/nama-repositori-anda.git)
-    cd nama-repositori-anda
-    ```
-
-2.  **Buat Lingkungan Virtual (Opsional tapi Direkomendasikan)**
-    ```sh
-    python -m venv venv
-    source venv/bin/activate  # Untuk Linux/Mac
-    .\venv\Scripts\activate   # Untuk Windows
-    ```
-
-3.  **Instal Dependensi**
-    Buat file `requirements.txt` yang berisi:
-    ```
-    tensorflow
-    numpy
-    matplotlib
-    scikit-learn
-    seaborn
-    ```
-    Lalu, jalankan perintah berikut untuk menginstalnya:
-    ```sh
-    pip install -r requirements.txt
-    ```
 
 ## Cara Menjalankan
 1.  **Buka Jupyter Notebook**
@@ -103,20 +61,14 @@ Dataset Makanan New/
 Kinerja model dievaluasi pada dataset validasi untuk mengukur kemampuannya dalam melakukan generalisasi.
 
 - **Akurasi & Loss**:
-  *(Direkomendasikan untuk menambahkan screenshot plot akurasi dan loss dari hasil pelatihan di sini)*
+  <img width="1001" height="470" alt="Training and Validation" src="https://github.com/user-attachments/assets/a707387b-9cfa-4680-9555-ec3db3df1bdb" />
 
 - **Classification Report**:
-  Laporan ini memberikan rincian metrik *precision*, *recall*, dan *f1-score* untuk setiap kelas. *(Tambahkan hasil dari notebook Anda di sini)*
+  Laporan ini memberikan rincian metrik *precision*, *recall*, dan *f1-score* untuk setiap kelas.
+  <img width="880" height="762" alt="Classification Report" src="https://github.com/user-attachments/assets/c9156e70-a67d-454d-91fb-dbb6bb961515" />
 
 - **Confusion Matrix**:
-  Visualisasi ini membantu memahami kelas mana yang sering salah diklasifikasikan oleh model. *(Tambahkan gambar confusion matrix dari notebook Anda di sini)*
+  Visualisasi ini membantu memahami kelas mana yang sering salah diklasifikasikan oleh model.
+<img width="1407" height="1189" alt="confusin matrix" src="https://github.com/user-attachments/assets/ba714d99-2e18-4a54-a976-5b7a8b2aa4f9" />
 
 
-## Kontribusi
-Kontribusi untuk proyek ini sangat diharapkan! Jika Anda memiliki ide untuk perbaikan atau menemukan bug, silakan buat *issue* atau ajukan *pull request*.
-
-1.  *Fork* repositori ini.
-2.  Buat *branch* baru (`git checkout -b fitur/NamaFitur`).
-3.  *Commit* perubahan Anda (`git commit -m 'Menambahkan Fitur X'`).
-4.  *Push* ke *branch* Anda (`git push origin fitur/NamaFitur`).
-5.  Buka *Pull Request*.
