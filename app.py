@@ -1,9 +1,19 @@
 import streamlit as st
-import tensorflow as tf
 import numpy as np
 from PIL import Image
 import os
 import zipfile
+
+# Try to import TensorFlow Lite
+try:
+    import tensorflow as tf
+except ImportError:
+    try:
+        import tflite_runtime.interpreter as tflite
+        tf = None
+    except ImportError:
+        st.error("TensorFlow atau TFLite Runtime tidak terinstall!")
+        st.stop()
 
 # Set page configuration
 st.set_page_config(
