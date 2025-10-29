@@ -176,30 +176,28 @@ class_names = [
 # =========================
 # FUNGSI LOAD MODEL AMAN
 # =========================
-@st.cache_resource(show_spinner=True)
-def load_model_safe():
-    """
-    Kita coba load model .keras (bukan .h5 lagi).
-    Kenapa? Karena log sebelumnya nunjukkin format .h5 bikin Keras bingung
-    dan melempar error "dense expects 1 input(s), got 2".
-    """
+@st.cache_resource(show_spinner="Memuat Model AI...")
+def load_model_safe() -> tf.keras.Model:
+    """Memuat model Keras dengan mencari beberapa candidate path."""
     candidate_paths = [
-        "Training Dataset/model.keras",     # path lokal kamu sekarang
+        "Training Dataset/model.keras",     # path yang ada di kode awal Anda
         "model.keras",                      # fallback kalau dipindahkan ke root
-        "model_export/model.keras",         # fallback hasil konversi Colab
+        "model_export/model.keras",         # fallback lain
     ]
 
     for p in candidate_paths:
         if os.path.exists(p):
+            # Penting: Pastikan versi TF di requirements.txt sama dengan versi saat training!
             return tf.keras.models.load_model(p)
 
-    # kalau gak ketemu, jelasin ke user via Streamlit error UI
+    # Jika tidak ada file yang ditemukan, berikan pesan error
     st.error(
-        "Model tidak ditemukan. Pastikan file 'model.keras' ada di folder proyek "
-        "dan path di app.py sudah benar."
+        "❌ **ERROR KRITIS: MODEL TIDAK DITEMUKAN.** Pastikan file 'model.keras' "
+        "telah di-*upload* di lokasi yang benar (contoh: 'Training Dataset/model.keras')."
     )
     st.stop()
 
+# Load model, aplikasi akan berhenti jika model gagal dimuat
 model = load_model_safe()
 
 
@@ -207,21 +205,19 @@ model = load_model_safe()
 # PREPROCESS GAMBAR
 # =========================
 def preprocess_image(pil_img: Image.Image) -> np.ndarray:
+    """Mengubah PIL Image menjadi NumPy array siap-input model (1, 320, 320, 3)."""
     img = pil_img.convert("RGB")
     img = img.resize(MODEL_INPUT_SIZE)
     arr = np.array(img).astype("float32") / 255.0
-    arr = np.expand_dims(arr, axis=0)  # shape (1, H, W, 3)
+    arr = np.expand_dims(arr, axis=0)
     return arr
 
 
 # =========================
 # PARSER LABEL -> DATA TERSTRUKTUR
 # =========================
-def parse_prediction_output(text: str):
-    """
-    Contoh text:
-    "Sate Ayam (1 tusuk) = 34 kkal (58% lemak, 8% karb, 34% prot)"
-    """
+def parse_prediction_output(text: str) -> dict:
+    """Menguraikan string label menjadi dictionary makronutrien."""
     try:
         food = re.search(r"^(.*?)\s*\(", text).group(1).strip()
         kalori = int(re.search(r"=\s*(\d+)\s*kkal", text).group(1))
@@ -229,10 +225,11 @@ def parse_prediction_output(text: str):
         karbo = int(re.search(r"(\d+)%\s*karb", text).group(1))
         protein = int(re.search(r"(\d+)%\s*prot", text).group(1))
     except Exception:
-        # fallback biar app gak crash kalau format label sedikit berubah
-        food = text
+        # Fallback jika format regex gagal (misalnya, label error)
+        food = text.split(" (")[0] if " (" in text else text
         kalori = 0
         lemak = karbo = protein = 0
+        st.warning(f"Gagal mem-parse data nutrisi dari label: {text}")
 
     return {
         "food": food,
@@ -246,7 +243,8 @@ def parse_prediction_output(text: str):
 # =========================
 # KOMENTAR EDUKASI GIZI
 # =========================
-def nutrition_comment(kal, lemak, karbo, protein):
+def nutrition_comment(kal: int, lemak: int, karbo: int, protein: int) -> str:
+    """Memberikan komentar edukasi berdasarkan komposisi makro."""
     komentar = []
 
     if kal >= 400:
@@ -270,12 +268,8 @@ def nutrition_comment(kal, lemak, karbo, protein):
 # =========================
 # ANALISIS PORSI vs KEBUTUHAN HARIAN
 # =========================
-def portion_stats(kalori_per_unit: float):
-    """
-    Output:
-    - pct_daily: berapa % dari 2000 kkal hanya dari SATU unit porsi dataset
-    - how_many_for_daily: kira-kira berapa unit porsi dataset supaya total ~2000 kkal
-    """
+def portion_stats(kalori_per_unit: float) -> tuple[float, float]:
+    """Menghitung persentase kebutuhan harian dan jumlah porsi yang dibutuhkan."""
     if kalori_per_unit <= 0:
         return 0.0, float("inf")
 
@@ -287,7 +281,8 @@ def portion_stats(kalori_per_unit: float):
 # =========================
 # INFERENSI MODEL
 # =========================
-def run_inference(pil_img: Image.Image):
+def run_inference(pil_img: Image.Image) -> dict:
+    """Menjalankan inferensi dan memproses hasilnya menjadi data terstruktur."""
     batch = preprocess_image(pil_img)
     probs = model.predict(batch)  # (1, num_classes)
 
