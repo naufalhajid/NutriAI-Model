@@ -3,8 +3,9 @@ import tensorflow as tf
 import numpy as np
 from PIL import Image
 import re
+import os
 
-# ========== CONFIGURASI HALAMAN ==========
+# ========== KONFIGURASI HALAMAN ==========
 st.set_page_config(
     page_title="NutriAI - Analisis Gizi Makanan",
     page_icon="🍽️",
@@ -40,13 +41,6 @@ st.markdown(
         opacity: 0.8;
         line-height: 1.2;
         margin-top: 2px;
-    }
-    .card-section {
-        background-color: #ffffff10;
-        border: 1px solid rgba(255,255,255,.1);
-        padding: 1rem 1.25rem;
-        border-radius: 12px;
-        backdrop-filter: blur(8px);
     }
     .result-card {
         background: #ffffff;
@@ -128,12 +122,10 @@ st.markdown(
 )
 
 # ========== KONSTAN KEBUTUHAN HARIAN ==========
-TARGET_KAL_HARIAN = 2000  # asumsi kebutuhan energi harian rata-rata
-
-# ========== LOAD MODEL ==========
-model = tf.keras.models.load_model("Training Dataset/model.keras")
+TARGET_KAL_HARIAN = 2000  # asumsi kebutuhan energi harian rata-rata dewasa
 
 # ========== LABEL / KELAS MAKANAN ==========
+# urutan WAJIB sama dengan urutan output model saat training
 class_names = [
     "Ayam Geprek (1 potong) = 394 kkal (62% lemak, 12% karb, 27% prot)",
     "Ayam Pop (1 potong) = 170 kkal (46% lemak, 11% karb, 43% prot)",
@@ -172,6 +164,21 @@ class_names = [
     "Tempe Bacem (1 potong) = 49 kkal (54% lemak, 17% karb, 29% prot)"
 ]
 
+# ========== FUNGSI LOAD MODEL (CACHE) ==========
+@st.cache_resource(show_spinner="Memuat model nutrisi...")
+def load_model():
+    model_path = "Training Dataset/model.keras"
+    if not os.path.exists(model_path):
+        st.error(
+            f"Model tidak ditemukan di '{model_path}'. "
+            "Pastikan file model.keras hasil konversi sudah ditempatkan di folder yang sama."
+        )
+        st.stop()
+    # compile=False biar gak ribut sama optimizer lama
+    return tf.keras.models.load_model(model_path, compile=False)
+
+model = load_model()
+
 # ========== PREPROCESS GAMBAR ==========
 def preprocess_image(image: Image.Image) -> np.ndarray:
     image = image.convert("RGB")
@@ -180,13 +187,23 @@ def preprocess_image(image: Image.Image) -> np.ndarray:
     image = np.expand_dims(image, axis=0)
     return image
 
-# ========== PARSER TEKS KE STRUKTUR DATA ==========
+# ========== PARSER LABEL KE DATA TERSTRUKTUR ==========
 def parse_prediction_output(text: str):
-    food = re.search(r"^(.*?)\s*\(", text).group(1)
-    kalori = int(re.search(r"=\s*(\d+)\s*kkal", text).group(1))
-    lemak = int(re.search(r"(\d+)%\s*lemak", text).group(1))
-    karbo = int(re.search(r"(\d+)%\s*karb", text).group(1))
-    protein = int(re.search(r"(\d+)%\s*prot", text).group(1))
+    try:
+        food = re.search(r"^(.*?)\s*\(", text).group(1)
+        kalori = int(re.search(r"=\s*(\d+)\s*kkal", text).group(1))
+        lemak = int(re.search(r"(\d+)%\s*lemak", text).group(1))
+        karbo = int(re.search(r"(\d+)%\s*karb", text).group(1))
+        protein = int(re.search(r"(\d+)%\s*prot", text).group(1))
+    except Exception:
+        # fallback kalau format label ga sesuai pattern
+        return {
+            "food": text,
+            "kalori": 0,
+            "lemak": 0,
+            "karbo": 0,
+            "protein": 0,
+        }
 
     return {
         "food": food,
@@ -196,7 +213,7 @@ def parse_prediction_output(text: str):
         "protein": protein
     }
 
-# ========== HELPER: EDUKASI RINGKAS ==========
+# ========== LOGIKA EDUKASI ==========
 def nutrition_comment(kal, lemak, karbo, protein):
     komentar = []
 
@@ -217,26 +234,22 @@ def nutrition_comment(kal, lemak, karbo, protein):
 
     return " ".join(komentar)
 
-# ========== HELPER: STATISTIK PORSI ==========
+# ========== HITUNG % KEBUTUHAN HARIAN & JUMLAH PORSI ==========
 def portion_stats(kalori_per_unit: float):
-    """
-    Menghitung:
-    - Berapa % dari 2000 kkal untuk SATU unit (1 porsi / 1 potong / 1 tusuk / 1 buah)
-    - Perkiraan berapa banyak unit tsb untuk ~2000 kkal total
-    """
     pct_daily = (kalori_per_unit / TARGET_KAL_HARIAN) * 100.0
-
-    if kalori_per_unit > 0:
-        how_many_for_daily = TARGET_KAL_HARIAN / kalori_per_unit
-    else:
-        how_many_for_daily = float("inf")
-
+    how_many_for_daily = (TARGET_KAL_HARIAN / kalori_per_unit) if kalori_per_unit > 0 else float("inf")
     return pct_daily, how_many_for_daily
 
 # ========== INFERENSI MODEL ==========
 def run_inference(image: Image.Image):
     batch = preprocess_image(image)
-    probs = model.predict(batch)  # shape (1, num_classes)
+
+    try:
+        probs = model.predict(batch)
+    except Exception as e:
+        st.error("Gagal melakukan prediksi. Cek ukuran input / bentuk model.")
+        st.code(str(e))
+        st.stop()
 
     pred_idx = int(np.argmax(probs, axis=1)[0])
     confidence = float(np.max(probs, axis=1)[0])
@@ -245,48 +258,38 @@ def run_inference(image: Image.Image):
     parsed = parse_prediction_output(raw_label)
 
     parsed["confidence"] = confidence
-
-    # edukasi nutrisi
     parsed["advice"] = nutrition_comment(
-        parsed["kalori"],
-        parsed["lemak"],
-        parsed["karbo"],
-        parsed["protein"]
+        parsed["kalori"], parsed["lemak"], parsed["karbo"], parsed["protein"]
     )
 
-    # hitung kontribusi terhadap kebutuhan harian per 1 unit porsi dataset
     pct_daily, how_many_for_daily = portion_stats(parsed["kalori"])
-    parsed["kalori_pct_daily"] = pct_daily                # % kebutuhan energi harian per 1 porsi dasar
-    parsed["how_many_for_daily"] = how_many_for_daily     # berapa porsi dasar ≈ 2000 kkal
+    parsed["kalori_pct_daily"] = pct_daily
+    parsed["how_many_for_daily"] = how_many_for_daily
 
     return parsed
 
-# ========== HEADER / HERO SECTION ==========
+# ========== HEADER / UI UTAMA ==========
 st.markdown(
     """
     ### 🍽️ NutriAI
     Upload foto makanan dan dapatkan estimasi kalori & komposisi gizi per porsi.
-    _Catatan: nilai nutrisi adalah perkiraan, bukan pengganti saran ahli gizi._
+
+    _Catatan: nilai nutrisi bersifat perkiraan, bukan pengganti konsultasi ahli gizi/praktisi medis._
     """
 )
 
-# ========== INPUT GAMBAR ==========
 uploaded_image = st.file_uploader(
     "📷 Upload foto makanan kamu (JPG / PNG)",
     type=["png", "jpg", "jpeg"]
 )
 
 if uploaded_image is not None:
-    # tampilkan gambar yang diupload
     img = Image.open(uploaded_image)
     st.image(img, caption="Gambar kamu", use_container_width=True)
 
-    # jalankan prediksi
     hasil = run_inference(img)
 
-    # ---------- BLOK HASIL UTAMA ----------
     st.markdown("#### 🔎 Hasil Deteksi")
-
     st.markdown(
         f"""
         <div class="result-card">
@@ -303,14 +306,12 @@ if uploaded_image is not None:
         unsafe_allow_html=True
     )
 
-    # ---------- BLOK KALORI HARIAN ----------
     st.markdown('<div class="section-header">Kontribusi energi harian</div>', unsafe_allow_html=True)
 
     daily_pct = hasil["kalori_pct_daily"]
     portion_need = hasil["how_many_for_daily"]
 
     colA, colB = st.columns([1, 3])
-
     with colA:
         st.markdown(
             f"""
@@ -321,36 +322,35 @@ if uploaded_image is not None:
             """,
             unsafe_allow_html=True
         )
-
     with colB:
         st.write(
-            f"Satu porsi yang terdeteksi ≈ **{hasil['kalori']} kkal**, yaitu sekitar "
+            f"Satu unit porsi pada dataset ≈ **{hasil['kalori']} kkal**, yaitu sekitar "
             f"**{daily_pct:.1f}%** dari asumsi kebutuhan energi harian {TARGET_KAL_HARIAN} kkal."
         )
-
         st.write(
             f"Kalau kamu hanya makan makanan ini saja seharian, "
-            f"kamu butuh kira-kira **{portion_need:.1f}x porsi** ukuran yang sama "
+            f"kamu butuh kira-kira **{portion_need:.1f}× porsi ukuran dataset** "
             f"untuk mencapai ~{TARGET_KAL_HARIAN} kkal."
         )
-
         st.caption(
-            "Catatan: definisi '1 porsi' mengikuti dataset. "
-            "Contoh: 1 tusuk sate ayam, 1 potong ayam geprek, 1 buah klepon, 1 porsi bakso, dsb."
+            "Definisi '1 porsi' mengikuti dataset pelatihan: "
+            "misal 1 tusuk sate, 1 potong ayam geprek, 1 buah klepon, 1 porsi bakso, dsb. "
+            "Jadi kalau di foto ada 10 tusuk sate, kalori aktual ≈ 10× angka di atas."
         )
 
-    # ---------- BLOK KOMPOSISI MAKRO ----------
     st.markdown('<div class="section-header">Komposisi makro</div>', unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3)
-
     with col1:
         st.markdown(
             f"""
             <div class="macro-box">
                 <div class="macro-label">Lemak</div>
                 <div class="macro-value">{hasil['lemak']}%</div>
-                <div class="macro-desc">Energi tinggi & bikin kenyang lama. Biasanya dari minyak, santan, goreng.</div>
+                <div class="macro-desc">
+                    Energi padat & bikin kenyang lama.
+                    Biasanya tinggi di makanan gorengan / santan.
+                </div>
             </div>
             """,
             unsafe_allow_html=True
@@ -363,7 +363,10 @@ if uploaded_image is not None:
             <div class="macro-box">
                 <div class="macro-label">Karbohidrat</div>
                 <div class="macro-value">{hasil['karbo']}%</div>
-                <div class="macro-desc">Bahan bakar cepat. Tinggi karbo = nasi, tepung, gula, mie.</div>
+                <div class="macro-desc">
+                    Sumber energi cepat.
+                    Dominan di nasi, tepung, gula, mie.
+                </div>
             </div>
             """,
             unsafe_allow_html=True
@@ -376,31 +379,30 @@ if uploaded_image is not None:
             <div class="macro-box">
                 <div class="macro-label">Protein</div>
                 <div class="macro-value">{hasil['protein']}%</div>
-                <div class="macro-desc">Bangun & jaga otot. Tinggi protein = ayam, telur, ikan, daging.</div>
+                <div class="macro-desc">
+                    Bagus buat otot & rasa kenyang.
+                    Tinggi di ayam, ikan, telur, daging.
+                </div>
             </div>
             """,
             unsafe_allow_html=True
         )
         st.progress(min(hasil['protein'], 100) / 100)
 
-    # ---------- BLOK EDUKASI PERSONAL ----------
     st.markdown('<div class="section-header">Catatan untuk kamu</div>', unsafe_allow_html=True)
-
     st.markdown(
         f"""
         <div class="edu-box">
             <div class="edu-title">Interpretasi Gizi</div>
             {hasil['advice']}
             <br><br>
-            Gunakan info ini buat sadar porsi, bukan buat takut makan.
-            Fokusnya bukan “ini gak boleh dimakan”, tapi “seberapa sering dan seberapa banyak”.
+            Fokusnya bukan larang makanan.
+            Fokusnya paham porsi dan frekuensi.
         </div>
         """,
         unsafe_allow_html=True
     )
 
 else:
-    st.info("⬆️ Upload dulu fotonya. Misal: sate ayam, ayam geprek, rendang, klepon, ketoprak, dll.")
-    st.caption("Tip: Foto jelas satu jenis makanan di tengah frame → hasil lebih akurat.")
-
-
+    st.info("⬆️ Upload foto makanan kamu. Contoh: sate ayam, ayam geprek, rendang, klepon, ketoprak.")
+    st.caption("Tip: Foto satu jenis makanan jelas di tengah frame → hasil lebih akurat.")
