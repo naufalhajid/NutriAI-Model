@@ -131,7 +131,7 @@ st.markdown(
 TARGET_KAL_HARIAN = 2000  # asumsi kebutuhan energi harian rata-rata
 
 # ========== LOAD MODEL ==========
-model = tf.keras.models.load_model("Training Dataset/model.h5/model.h5")
+model = tf.keras.models.load_model("Training Dataset/model.h5")
 
 # ========== LABEL / KELAS MAKANAN ==========
 class_names = [
@@ -402,3 +402,4 @@ if uploaded_image is not None:
 else:
     st.info("⬆️ Upload dulu fotonya. Misal: sate ayam, ayam geprek, rendang, klepon, ketoprak, dll.")
     st.caption("Tip: Foto jelas satu jenis makanan di tengah frame → hasil lebih akurat.")
+
