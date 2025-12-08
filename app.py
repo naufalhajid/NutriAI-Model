@@ -1,4 +1,5 @@
 import streamlit as st
+os.environ["TF_USE_LEGACY_KERAS"] = "1"
 import tensorflow as tf
 import numpy as np
 from PIL import Image
@@ -452,3 +453,4 @@ if uploaded_image is not None:
 else:
     st.info("⬆️ Upload dulu fotonya. Contoh: sate ayam, ayam geprek, rendang, klepon, ketoprak, dll.")
     st.caption("Tip: Foto jelas satu jenis makanan di tengah frame → hasil lebih akurat.")
+
