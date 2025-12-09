@@ -14,17 +14,29 @@ Repositori ini berisi kode dan notebook untuk pengembangan, pelatihan, dan evalu
 - [Hasil dan Evaluasi](#hasil-dan-evaluasi)
 
 ## Pendahuluan
-Dalam pengembangan sistem pengenalan gambar, klasifikasi gambar makanan merupakan salah satu aplikasi yang populer dan menantang. Proyek ini berfokus pada pembangunan dan evaluasi sebuah model *deep learning* yang dapat mengenali dan mengklasifikasikan gambar makanan ke dalam berbagai kategori (misalnya, "nasi goreng", "sate", "salad", dll.).
+**NutriAI** adalah aplikasi cerdas yang menggabungkan *Computer Vision* dan *Generative AI* untuk membantu pengguna memahami kandungan gizi makanan mereka. 
 
-Tantangan utama setelah melatih model adalah memastikan kinerjanya tidak hanya baik pada data latih, tetapi juga dapat melakukan generalisasi dengan baik pada data baru yang belum pernah dilihat sebelumnya. Oleh karena itu, evaluasi mendalam menjadi fokus penting dalam proyek ini untuk memastikan keandalan model.
+Sistem ini tidak hanya mendeteksi jenis makanan dari gambar menggunakan **TensorFlow/Keras**, tetapi juga menyediakan konsultasi gizi interaktif melalui **Google Gemini AI**.
 
-## Fitur Utama
-- **Klasifikasi Multi-Kelas**: Model mampu mengklasifikasikan gambar ke dalam beberapa kategori makanan yang berbeda.
-- **Arsitektur CNN**: Menggunakan arsitektur Convolutional Neural Network yang efektif untuk tugas pengenalan gambar.
-- **Augmentasi Data**: Menerapkan teknik augmentasi gambar untuk meningkatkan variasi data latih dan mencegah *overfitting*.
-- **Evaluasi Kinerja**: Analisis performa model menggunakan metrik standar seperti *accuracy*, *precision*, *recall*, dan *F1-score*, serta visualisasi *confusion matrix*.
-- **Siap untuk Deployment**: Model akhir dikonversi ke format `.tflite` untuk optimasi dan kemudahan implementasi pada perangkat Android, iOS, atau perangkat IoT lainnya.
+---
 
+##  Fitur Utama
+
+### 1.  Klasifikasi Makanan (Computer Vision)
+- **Model Deep Learning**: Menggunakan arsitektur CNN (Convolutional Neural Network) yang dilatih khusus pada dataset makanan Indonesia.
+- **Deteksi Otomatis**: Mengenali berbagai jenis makanan populer (misal: Sate Ayam, Rendang, Bakso, dll).
+- **Estimasi Kalori & Makro**: Menampilkan estimasi energi (kkal), protein, lemak, dan karbohidrat per porsi standar.
+
+### 2.  Konsultasi Gizi (AI Chatbot - *Baru!*)
+- **Integrasi Gemini AI**: Menggunakan model besutan Google untuk analisis lebih dalam.
+- **Tanya Jawab Interaktif**: Pengguna bisa bertanya, "Apakah makanan ini aman untuk diet keto?" atau "Bagaimana cara membakar kalori ini?".
+- **Konteks Otomatis**: Chatbot otomatis "tahu" makanan apa yang baru saja Anda scan, sehingga jawaban lebih spesifik.
+
+### 3.  Visualisasi & Edukasi
+- **Progress Bar Makronutrisi**: Visualisasi komposisi lemak, karbo, dan protein.
+- **Analisis Kebutuhan Harian**: Membandingkan kalori makanan dengan rata-rata kebutuhan harian (2000 kkal).
+
+---
 ## Arsitektur Model
 Model ini dibangun menggunakan Keras Sequential API dengan arsitektur CNN yang efektif untuk tugas klasifikasi gambar. Strukturnya terdiri dari beberapa lapisan konvolusi untuk ekstraksi fitur, lapisan pooling untuk reduksi dimensi, lapisan dropout untuk mencegah overfitting, dan diakhiri dengan lapisan dense untuk klasifikasi.
 
@@ -36,13 +48,17 @@ Model ini dilatih menggunakan dataset gambar makanan.
 - **Sumber Dataset**: Kaggle, dan dataset pribadi
 - **Pra-pemrosesan**: Gambar di-rescale dan di-augmentasi (rotasi, zoom, flip horizontal) untuk meningkatkan ketahanan model.
 
+---
+
 ## Teknologi yang Digunakan
-- **Python 3.x**
-- **TensorFlow & Keras**: Framework utama untuk membangun dan melatih model *deep learning*.
-- **Scikit-learn**: Untuk metrik evaluasi seperti *classification report* dan *confusion matrix*.
-- **NumPy**: Untuk operasi numerik.
-- **Matplotlib & Seaborn**: Untuk visualisasi data, seperti plot histori pelatihan dan *confusion matrix*.
-- **Jupyter Notebook / Google Colab**: Untuk lingkungan pengembangan interaktif.
+
+- **Frontend**: [Streamlit](https://streamlit.io/) (Framework UI Python)
+- **AI Core**:
+  - **TensorFlow & Keras**: Untuk model klasifikasi gambar (`model.keras`).
+  - **Google Generative AI (Gemini)**: Untuk fitur chatbot cerdas.
+- **Data Processing**: NumPy, Pillow (PIL).
+
+---
 
 ## Cara Menjalankan
 1.  **Buka Jupyter Notebook**
@@ -70,5 +86,6 @@ Kinerja model dievaluasi pada dataset validasi untuk mengukur kemampuannya dalam
 - **Confusion Matrix**:
   Visualisasi ini membantu memahami kelas mana yang sering salah diklasifikasikan oleh model.
 <img width="1407" height="1189" alt="confusin matrix" src="https://github.com/user-attachments/assets/ba714d99-2e18-4a54-a976-5b7a8b2aa4f9" />
+
 
 
