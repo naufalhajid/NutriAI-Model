@@ -2,14 +2,10 @@ import os
 from PIL import Image
 import streamlit as st
 import google.generativeai as genai
-from dotenv import load_dotenv
 
 # Import Custom Modules
 from constants import TARGET_KAL_HARIAN, MAX_CHAT_QUESTIONS
 from utils import APP_STYLE, load_model_safe, run_inference
-
-# Load Environment Variables
-load_dotenv()
 
 # =========================
 # PAGE CONFIG
@@ -30,7 +26,8 @@ def render_sidebar():
     with st.sidebar:
         st.title("⚙️ Settings")
         
-        env_api_key = os.getenv("GEMINI_API_KEY")
+        # Check for API Key in Streamlit Secrets
+        env_api_key = st.secrets.get("GEMINI_API_KEY")
         
         if env_api_key:
             api_key = env_api_key
