@@ -51,8 +51,6 @@ def render_sidebar():
             "**NutriAI** uses Deep Learning to recognize Indonesian food "
             "and Gemini AI for personalized nutrition consultation."
         )
-        st.markdown("---")
-        st.caption("Built with ❤️ using TensorFlow & Streamlit")
     
     return api_key
 
@@ -234,4 +232,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
