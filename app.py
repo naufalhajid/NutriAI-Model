@@ -2,7 +2,6 @@ import os
 from PIL import Image
 import streamlit as st
 import google.generativeai as genai
-
 # Import Custom Modules
 from constants import TARGET_KAL_HARIAN, MAX_CHAT_QUESTIONS
 from utils import APP_STYLE, load_model_safe, run_inference
@@ -235,3 +234,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
