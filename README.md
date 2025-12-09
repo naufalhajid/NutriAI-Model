@@ -27,8 +27,8 @@ Sistem ini tidak hanya mendeteksi jenis makanan dari gambar menggunakan **Tensor
 - **Deteksi Otomatis**: Mengenali berbagai jenis makanan populer (misal: Sate Ayam, Rendang, Bakso, dll).
 - **Estimasi Kalori & Makro**: Menampilkan estimasi energi (kkal), protein, lemak, dan karbohidrat per porsi standar.
 
-### 2.  Konsultasi Gizi (AI Chatbot - *Baru!*)
-- **Integrasi Gemini AI**: Menggunakan model besutan Google untuk analisis lebih dalam.
+### 2.  Konsultasi Gizi (AI Chatbot)
+- **Integrasi Gemini AI**: Menggunakan model Google untuk analisis lebih dalam.
 - **Tanya Jawab Interaktif**: Pengguna bisa bertanya, "Apakah makanan ini aman untuk diet keto?" atau "Bagaimana cara membakar kalori ini?".
 - **Konteks Otomatis**: Chatbot otomatis "tahu" makanan apa yang baru saja Anda scan, sehingga jawaban lebih spesifik.
 
@@ -86,6 +86,7 @@ Kinerja model dievaluasi pada dataset validasi untuk mengukur kemampuannya dalam
 - **Confusion Matrix**:
   Visualisasi ini membantu memahami kelas mana yang sering salah diklasifikasikan oleh model.
 <img width="1407" height="1189" alt="confusin matrix" src="https://github.com/user-attachments/assets/ba714d99-2e18-4a54-a976-5b7a8b2aa4f9" />
+
 
 
 
