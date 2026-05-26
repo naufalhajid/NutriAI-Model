@@ -61,17 +61,38 @@ Model ini dilatih menggunakan dataset gambar makanan.
 ---
 
 ## Cara Menjalankan
-1.  **Buka Jupyter Notebook**
-    Jalankan perintah berikut di terminal Anda:
+### Menjalankan Aplikasi Streamlit
+1.  **Buat dan aktifkan virtual environment**
+    ```sh
+    python -m venv .venv
+    .venv\Scripts\activate
+    ```
+
+2.  **Install dependency**
+    ```sh
+    pip install -r requirements.txt
+    ```
+
+3.  **Opsional: aktifkan Gemini chatbot**
+    Buat file `.streamlit/secrets.toml`, lalu isi:
+    ```toml
+    GEMINI_API_KEY = "isi_api_key_anda"
+    ```
+    Jika file ini tidak ada, aplikasi tetap bisa dipakai untuk klasifikasi gambar, dan API key dapat diisi melalui sidebar.
+
+4.  **Jalankan aplikasi**
+    ```sh
+    streamlit run app.py
+    ```
+
+### Menjalankan Notebook Training
+1.  Jalankan Jupyter Notebook:
     ```sh
     jupyter notebook
     ```
-2.  **Jalankan Notebook**
-    Buka file `NutriAI_Model.ipynb` dan jalankan sel-sel kode secara berurutan dari atas ke bawah.
-    - Pastikan path dataset sudah benar.
-    - Anda dapat menyesuaikan *hyperparameter* seperti *learning rate*, jumlah *epoch*, atau *batch size* di dalam notebook.
-3.  **Hasil Akhir**
-    Setelah notebook selesai dijalankan, file `model.tflite` akan dihasilkan, yang merupakan model yang telah dikonversi dan siap untuk diimplementasikan.
+2.  Buka `Training Dataset/NutriAI_Model.ipynb` dan jalankan sel secara berurutan.
+3.  Pastikan path dataset mengarah ke `Dataset Makanan New`.
+4.  Hasil training dapat diekspor ke `model.keras`, `model.h5`, atau `model.tflite` sesuai kebutuhan deployment.
 
 ## Hasil dan Evaluasi
 Kinerja model dievaluasi pada dataset validasi untuk mengukur kemampuannya dalam melakukan generalisasi.

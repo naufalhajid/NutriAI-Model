@@ -1,3 +1,5 @@
+import re
+
 # =========================
 # GLOBAL CONSTANTS
 # =========================
@@ -46,3 +48,38 @@ CLASS_NAMES = [
     "Telur Dadar (1 porsi) = 93 kkal (71% lemak, 2% karb, 28% prot)",
     "Tempe Bacem (1 potong) = 49 kkal (54% lemak, 17% karb, 29% prot)"
 ]
+
+# =========================
+# DYNAMIC NUTRITION DATABASE
+# =========================
+def _parse_class_names():
+    db = {}
+    for text in CLASS_NAMES:
+        try:
+            food = re.search(r"^(.*?)\s*\(", text).group(1).strip()
+            portion = re.search(r"\((.*?)\)", text).group(1).strip()
+            kalori = int(re.search(r"=\s*(\d+)\s*kkal", text).group(1))
+            lemak = int(re.search(r"(\d+)%\s*lemak", text).group(1))
+            karbo = int(re.search(r"(\d+)%\s*karb", text).group(1))
+            protein = int(re.search(r"(\d+)%\s*prot", text).group(1))
+            db[text] = {
+                "food": food,
+                "portion": portion,
+                "kalori": kalori,
+                "lemak": lemak,
+                "karbo": karbo,
+                "protein": protein
+            }
+        except Exception:
+            db[text] = {
+                "food": text.split(" (")[0] if " (" in text else text,
+                "portion": "1 porsi",
+                "kalori": 0,
+                "lemak": 0,
+                "karbo": 0,
+                "protein": 0
+            }
+    return db
+
+NUTRITION_DB = _parse_class_names()
+

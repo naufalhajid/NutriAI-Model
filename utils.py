@@ -5,102 +5,164 @@ import keras
 import streamlit as st
 from constants import CLASS_NAMES, MODEL_INPUT_SIZE, TARGET_KAL_HARIAN
 
+MODEL_CANDIDATE_PATHS = (
+    "Training Dataset/model.keras",
+    "Training Dataset/model.keras/model.keras",
+    "model.keras",
+)
+
 # =========================
 # CSS STYLES
 # =========================
 APP_STYLE = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-    --primary: #00AB55;
-    --secondary: #007B55;
-    --bg-light: #F9FAFB;
-    --card-bg: #FFFFFF;
-    --text-main: #212B36;
-    --text-sub: #637381;
-    --shadow-card: 0 4px 12px rgba(0,0,0,0.05);
+    --primary: #10B981;
+    --primary-glow: rgba(16, 185, 129, 0.15);
+    --secondary: #059669;
+    --bg-gradient: linear-gradient(135deg, #F0FDFA 0%, #FFF 100%);
+    --card-bg: rgba(255, 255, 255, 0.85);
+    --text-main: #0F172A;
+    --text-sub: #475569;
+    --shadow-premium: 0 10px 30px -10px rgba(0, 168, 89, 0.08), 0 1px 3px rgba(0,0,0,0.02);
+    --border-color: rgba(16, 185, 129, 0.12);
 }
 
+/* Base Body Override */
 html, body, [class*="css"] {
     font-family: 'Plus Jakarta Sans', sans-serif !important;
-    background-color: var(--bg-light);
-    color: var(--text-main);
+    background: var(--bg-gradient) !important;
+    color: var(--text-main) !important;
 }
 
-/* CARD STYLE */
-.stCard {
+/* Premium Card Style with Glassmorphism */
+.stCard, div[data-testid="stMetricValue"] {
     background: var(--card-bg);
-    border-radius: 16px;
-    box-shadow: var(--shadow-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-premium);
     padding: 24px;
     margin-bottom: 20px;
-    border: 1px solid rgba(145, 158, 171, 0.12);
+    transition: all 0.3s ease;
 }
 
+/* Macro Cards Styling */
 .macro-card {
-    background-color: white;
-    padding: 20px;
-    border-radius: 16px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 22px 16px;
+    border-radius: 18px;
+    box-shadow: 0 4px 20px -5px rgba(0,0,0,0.04);
     text-align: center;
-    border: 1px solid #eee;
-    transition: transform 0.2s;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .macro-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px -10px rgba(16, 185, 129, 0.25);
+    border-color: rgba(16, 185, 129, 0.3);
 }
 
 .macro-value {
-    font-size: 1.5rem;
-    font-weight: 700;
+    font-size: 1.8rem;
+    font-weight: 800;
     color: var(--text-main);
     margin: 8px 0;
+    background: linear-gradient(135deg, #0F172A 0%, #334155 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 .macro-label {
-    font-size: 0.85rem;
-    font-weight: 600;
+    font-size: 0.8rem;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
     color: var(--text-sub);
 }
 
-/* HERO SECTION */
+/* Hero Section Banner */
 .hero-title {
-    font-size: 2.5rem;
-    font-weight: 800;
-    background: -webkit-linear-gradient(45deg, #00AB55, #007B55);
+    font-size: 3rem;
+    font-weight: 850;
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     text-align: center;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.2rem;
+    letter-spacing: -1px;
+    animation: fadeIn 0.8s ease-out;
 }
 .hero-sub {
-    font-size: 1rem;
+    font-size: 1.1rem;
     color: var(--text-sub);
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 2.5rem;
+    font-weight: 500;
+    animation: fadeIn 1s ease-out;
 }
 
-/* RESULT HIGHLIGHT */
+/* Result Prediction Box */
 .prediction-highlight {
-    background: linear-gradient(135deg, #e8f5e9 0%, #fff 100%);
-    border: 1px solid #c8e6c9;
-    border-radius: 12px;
-    padding: 16px;
-    margin-top: 10px;
+    background: linear-gradient(135deg, rgba(209, 250, 229, 0.45) 0%, rgba(255, 255, 255, 0.9) 100%);
+    border: 1.5px solid rgba(16, 185, 129, 0.25);
+    border-radius: 18px;
+    padding: 20px;
+    margin-top: 15px;
     text-align: center;
+    box-shadow: 0 10px 25px -15px rgba(16, 185, 129, 0.2);
+    backdrop-filter: blur(8px);
 }
 .food-name {
-    font-size: 1.8rem;
+    font-size: 2.1rem;
+    font-weight: 800;
+    color: #065F46;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+}
+.confidence-chip {
+    display: inline-block;
+    background: #D1FAE5;
+    color: #065F46;
     font-weight: 700;
-    color: #1b5e20;
+    font-size: 0.85rem;
+    padding: 6px 16px;
+    border-radius: 9999px;
+    box-shadow: 0 4px 10px -3px rgba(16, 185, 129, 0.15);
 }
 
-/* PROGRESS BARS CUSTOM */
+/* Alert/Warning Card for low confidence */
+.warning-card {
+    background: linear-gradient(135deg, rgba(254, 243, 199, 0.45) 0%, rgba(255, 255, 255, 0.9) 100%);
+    border: 1.5px solid rgba(245, 158, 11, 0.3);
+    border-radius: 18px;
+    padding: 24px;
+    text-align: center;
+    margin: 20px 0;
+    box-shadow: 0 10px 25px -15px rgba(245, 158, 11, 0.15);
+    backdrop-filter: blur(8px);
+}
+.warning-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #92400E;
+    margin-bottom: 8px;
+}
+
+/* Progress Bar Custom Styling */
 .stProgress > div > div > div > div {
-    background-image: linear-gradient(to right, #00AB55, #81C784);
+    background-image: linear-gradient(to right, #10B981, #34D399) !important;
+    border-radius: 9999px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 </style>
 """
@@ -112,16 +174,12 @@ html, body, [class*="css"] {
 @st.cache_resource(show_spinner="Loading AI Model...")
 def load_model_safe():
     """Load Keras model with multiple candidate path checks."""
-    candidate_paths = [
-        "Training Dataset/model.keras",     # directory if SavedModel format
-        "Training Dataset/model.keras/model.keras", # nested file if user structure is weird
-        "model.keras",                      # fallback if moved to root
-    ]
-
-    for p in candidate_paths:
+    for p in MODEL_CANDIDATE_PATHS:
         if os.path.exists(p):
             try:
-                return keras.models.load_model(p)
+                model = keras.models.load_model(p)
+                validate_model_output(model, p)
+                return model
             except Exception as e:
                 print(f"⚠️ Failed to load from {p}: {e}")
                 continue
@@ -129,6 +187,24 @@ def load_model_safe():
     st.error(
         "❌ **CRITICAL ERROR: MODEL NOT FOUND.** Please ensure 'model.keras' "
         "is uploaded correctly (e.g., in 'Training Dataset/model.keras')."
+    )
+    st.stop()
+
+def validate_model_output(model, model_path):
+    """Stop early when the loaded model does not match the app labels."""
+    output_shape = getattr(model, "output_shape", None)
+    if not output_shape:
+        return
+
+    output_classes = output_shape[-1]
+    expected_classes = len(CLASS_NAMES)
+    if output_classes is None or int(output_classes) == expected_classes:
+        return
+
+    st.error(
+        "❌ **MODEL / LABEL MISMATCH.** "
+        f"Model `{model_path}` outputs {output_classes} classes, "
+        f"but `CLASS_NAMES` contains {expected_classes} labels."
     )
     st.stop()
 
@@ -141,7 +217,12 @@ def preprocess_image(pil_img):
     return arr
 
 def parse_prediction_output(text):
-    """Parse label string into structured dictionary."""
+    """Parse label string into structured dictionary, looking up constants.NUTRITION_DB."""
+    from constants import NUTRITION_DB
+    if text in NUTRITION_DB:
+        return NUTRITION_DB[text].copy()
+
+    # Fallback to regex parser in case of anomalies
     try:
         food = re.search(r"^(.*?)\s*\(", text).group(1).strip()
         kalori = int(re.search(r"=\s*(\d+)\s*kkal", text).group(1))
@@ -161,6 +242,7 @@ def parse_prediction_output(text):
         "karbo": karbo,
         "protein": protein,
     }
+
 
 def nutrition_comment(kal, lemak, karbo, protein):
     """Generate educational comment based on macros."""
@@ -203,6 +285,12 @@ def run_inference(model, pil_img):
 
     pred_idx = int(np.argmax(probs, axis=1)[0])
     confidence = float(np.max(probs, axis=1)[0])
+    if pred_idx >= len(CLASS_NAMES):
+        st.error(
+            "❌ Model prediction index is outside `CLASS_NAMES`. "
+            "Please verify the model artifact and label ordering."
+        )
+        st.stop()
 
     raw_label = CLASS_NAMES[pred_idx]
     parsed = parse_prediction_output(raw_label)

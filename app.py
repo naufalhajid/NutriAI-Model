@@ -136,6 +136,10 @@ def render_chatbot(api_key, hasil):
         st.session_state.messages = []
     if "chat_count" not in st.session_state:
         st.session_state.chat_count = 0
+    if st.session_state.get("chat_food") != hasil["food"]:
+        st.session_state.messages = []
+        st.session_state.chat_count = 0
+        st.session_state.chat_food = hasil["food"]
 
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
@@ -155,7 +159,6 @@ def render_chatbot(api_key, hasil):
         if not api_key:
             st.error("❌ Please enter your Gemini API Key in the sidebar first.")
         else:
-            st.session_state.chat_count += 1
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
                 st.markdown(prompt)
@@ -163,38 +166,52 @@ def render_chatbot(api_key, hasil):
             with st.chat_message("assistant"):
                 with st.spinner("Thinking..."):
                     try:
-                        context_text = (
-                            f"Peran: Kamu adalah AI Ahli Gizi yang ramah dan berwawasan luas. "
-                            f"Tugasmu adalah membimbing pengguna memahami nutrisi makanan mereka.\n\n"
-                            
-                            f"### Data Makanan\n"
+                        # Build system instructions containing the food data context
+                        system_instruction = (
+                            "Kamu adalah AI Ahli Gizi yang ramah dan berwawasan luas. "
+                            "Tugasmu adalah membimbing pengguna memahami nutrisi makanan mereka.\n\n"
+                            f"### Data Makanan yang Terdeteksi:\n"
                             f"Nama: **{hasil['food']}**\n"
                             f"- Kalori: {hasil['kalori']} kkal\n"
                             f"- Komposisi Makro: Lemak {hasil['lemak']}%, Karbo {hasil['karbo']}%, Protein {hasil['protein']}%\n"
                             f"- Kontribusi Harian: {hasil['kalori_pct_daily']:.1f}% dari kebutuhan energi harian rata-rata\n\n"
-                            
-                            f"### Pertanyaan Pengguna\n"
-                            f"\"{prompt}\"\n\n"
-                            
-                            f"### Instruksi Jawaban\n"
-                            f"1. Jawab pertanyaan pengguna secara langsung dan ringkas.\n"
-                            f"2. Berikan analisis singkat mengenai keseimbangan nutrisi makanan ini (apakah tinggi lemak/gula/protein?).\n"
-                            f"3. Berikan saran praktis (misal: 'cocok dimakan setelah olahraga' atau 'batasi porsinya').\n"
-                            f"4. Gunakan format markdown (bold, bullet points) agar mudah dibaca.\n"
-                            f"5. Hindari bahasa medis yang terlalu rumit."
+                            "Instruksi Jawaban:\n"
+                            "1. Jawab pertanyaan pengguna secara langsung dan ringkas.\n"
+                            "2. Berikan analisis singkat mengenai keseimbangan nutrisi makanan ini (apakah tinggi lemak/gula/protein?).\n"
+                            "3. Berikan saran praktis (misal: 'cocok dimakan setelah olahraga' atau 'batasi porsinya').\n"
+                            "4. Gunakan format markdown (bold, bullet points) agar mudah dibaca.\n"
+                            "5. Hindari bahasa medis yang terlalu rumit."
                         )
                         
-                        model_genai = genai.GenerativeModel('gemini-2.0-flash-lite')
-                        response = model_genai.generate_content(context_text)
+                        # Initialize model with system instruction
+                        model_genai = genai.GenerativeModel(
+                            model_name='gemini-2.0-flash-lite',
+                            system_instruction=system_instruction
+                        )
+                        
+                        # Reconstruct the conversation history in Gemini's format
+                        formatted_history = []
+                        for msg in st.session_state.messages[:-1]: # exclude current user message
+                            formatted_history.append({
+                                "role": "user" if msg["role"] == "user" else "model",
+                                "parts": [msg["content"]]
+                            })
+                        
+                        # Start chat with history and send message
+                        chat = model_genai.start_chat(history=formatted_history)
+                        response = chat.send_message(prompt)
                         
                         st.markdown(response.text)
                         st.session_state.messages.append({"role": "assistant", "content": response.text})
+                        st.session_state.chat_count += 1
                     except Exception as e:
+                        st.session_state.messages.pop()
                         st.error(f"❌ Gemini API Error: {e}")
     
     if st.session_state.messages:
         if st.button("🗑️ Clear Chat History"):
             st.session_state.messages = []
+            st.session_state.chat_count = 0
             st.rerun()
 
 # =========================
@@ -218,8 +235,32 @@ def main():
         with st.spinner("Analyzing your food..."):
             hasil = run_inference(model, img)
         
-        render_results(img, hasil)
-        render_chatbot(api_key, hasil)
+        # Check confidence threshold (minimum 45% to display results)
+        if hasil["confidence"] < 0.45:
+            col_img, col_warn = st.columns([1, 1.2])
+            with col_img:
+                st.image(img, caption="Uploaded Image", use_container_width=True)
+            with col_warn:
+                st.markdown(f"""
+                <div class="warning-card">
+                    <div class="warning-title">⚠️ Makanan Kurang Jelas / Tidak Dikenali</div>
+                    <p style="color: #92400E; font-size: 0.95rem; margin-bottom: 12px;">
+                        Tingkat keyakinan model hanya <b>{hasil['confidence']*100:.1f}%</b> (di bawah batas minimum 45%).
+                    </p>
+                    <p style="color: #B45309; font-size: 0.85rem; line-height: 1.4; text-align: left;">
+                        Model mendeteksi kemiripan dengan <b>{hasil['food']}</b>, tetapi tingkat kepercayaan terlalu rendah untuk menyajikan informasi gizi yang akurat.
+                    </p>
+                    <p style="color: #B45309; font-size: 0.85rem; line-height: 1.4; text-align: left; margin-top: 8px;">
+                        <b>Saran untuk hasil lebih baik:</b><br/>
+                        • Pastikan pencahayaan terang dan tidak silau.<br/>
+                        • Posisikan makanan di tengah kamera.<br/>
+                        • Ambil gambar lebih dekat pada satu porsi makanan.
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            render_results(img, hasil)
+            render_chatbot(api_key, hasil)
         
     else:
         st.info("⬆️ Start by uploading a food photo above. Supported: JPG, PNG.")
