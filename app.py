@@ -11,10 +11,191 @@ from utils import APP_STYLE, load_model_safe, run_inference
 # =========================
 st.set_page_config(
     page_title="NutriAI - Analisis Gizi Makanan",
-    page_icon="🍽️",
+    page_icon="N",
     layout="centered"
 )
 st.markdown(APP_STYLE, unsafe_allow_html=True)
+
+NUTRIAI_DESIGN = """
+<style>
+.main .block-container {
+    max-width: 1080px;
+    padding-top: 2.2rem;
+    padding-bottom: 4rem;
+}
+
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #F8FFFB 0%, #EFFAF5 100%);
+    border-right: 1px solid rgba(16, 185, 129, 0.14);
+}
+
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3 {
+    color: #064E3B;
+    letter-spacing: -0.02em;
+}
+
+.nutri-hero {
+    background:
+        radial-gradient(circle at 90% 12%, rgba(16, 185, 129, 0.18), transparent 28%),
+        linear-gradient(135deg, #FFFFFF 0%, #ECFDF5 100%);
+    border: 1px solid rgba(16, 185, 129, 0.18);
+    border-radius: 28px;
+    box-shadow: 0 30px 80px -45px rgba(6, 95, 70, 0.55);
+    margin-bottom: 1.6rem;
+    padding: clamp(1.5rem, 4vw, 2.4rem);
+}
+
+.nutri-eyebrow,
+.section-eyebrow {
+    color: #059669;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+}
+
+.nutri-title {
+    color: #0F172A;
+    font-size: clamp(2.4rem, 7vw, 4.2rem);
+    font-weight: 900;
+    letter-spacing: -0.06em;
+    line-height: 0.96;
+    margin: 0;
+}
+
+.nutri-subtitle {
+    color: #475569;
+    font-size: 1.05rem;
+    line-height: 1.65;
+    margin: 1.1rem 0 1.5rem;
+    max-width: 720px;
+}
+
+.hero-pills,
+.sample-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+}
+
+.hero-pill,
+.sample-chip {
+    background: rgba(255, 255, 255, 0.84);
+    border: 1px solid rgba(16, 185, 129, 0.18);
+    border-radius: 999px;
+    color: #065F46;
+    display: inline-flex;
+    font-size: 0.86rem;
+    font-weight: 700;
+    padding: 0.55rem 0.85rem;
+}
+
+.upload-panel,
+.result-panel,
+.chat-panel {
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 24px;
+    box-shadow: 0 20px 60px -42px rgba(15, 23, 42, 0.45);
+    margin: 1rem 0 1.5rem;
+    padding: clamp(1rem, 3vw, 1.4rem);
+}
+
+.section-title {
+    color: #0F172A;
+    font-size: 1.35rem;
+    font-weight: 850;
+    letter-spacing: -0.03em;
+    margin: 0 0 0.35rem;
+}
+
+.section-copy {
+    color: #64748B;
+    font-size: 0.96rem;
+    line-height: 1.55;
+    margin: 0 0 1rem;
+}
+
+.energy-card {
+    background: linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%);
+    border: 1px solid #FED7AA;
+    border-radius: 22px;
+    margin-bottom: 1rem;
+    padding: 1.2rem;
+}
+
+.energy-label {
+    color: #C2410C;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.energy-value {
+    color: #9A3412;
+    font-size: 2.4rem;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    margin-top: 0.35rem;
+}
+
+.energy-note {
+    color: #EA580C;
+    font-size: 0.88rem;
+    margin-top: 0.55rem;
+}
+
+.energy-track {
+    background: #FED7AA;
+    border-radius: 999px;
+    height: 8px;
+    margin-top: 0.8rem;
+    overflow: hidden;
+}
+
+.energy-fill {
+    background: linear-gradient(90deg, #F97316, #FB923C);
+    border-radius: inherit;
+    height: 100%;
+}
+
+.insight-card {
+    background: #F0FDF4;
+    border: 1px solid #BBF7D0;
+    border-radius: 18px;
+    color: #166534;
+    line-height: 1.55;
+    padding: 1rem;
+}
+
+.stFileUploader {
+    background: #FFFFFF;
+    border: 1px dashed rgba(16, 185, 129, 0.35);
+    border-radius: 20px;
+    padding: 0.8rem;
+}
+
+.stButton > button,
+.stDownloadButton > button {
+    border-radius: 999px;
+    font-weight: 800;
+}
+
+@media (max-width: 720px) {
+    .hero-pills,
+    .sample-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+"""
+st.markdown(NUTRIAI_DESIGN, unsafe_allow_html=True)
 
 # =========================
 # UI FUNCTIONS
@@ -23,14 +204,15 @@ st.markdown(APP_STYLE, unsafe_allow_html=True)
 def render_sidebar():
     """Renders the sidebar settings."""
     with st.sidebar:
-        st.title("⚙️ Settings")
+        st.title("NutriAI")
+        st.caption("Food recognition and nutrition consultation for Indonesian meals.")
         
         # Check for API Key in Streamlit Secrets
         env_api_key = st.secrets.get("GEMINI_API_KEY")
         
         if env_api_key:
             api_key = env_api_key
-            st.success("✅ API Key loaded from environment!")
+            st.success("API key loaded from environment.")
         else:
             api_key = st.text_input(
                 "Gemini API Key", 
@@ -41,12 +223,12 @@ def render_sidebar():
         if api_key:
             genai.configure(api_key=api_key)
             if not env_api_key:
-                st.success("✅ API Key connected!")
+                st.success("API key connected.")
         else:
-            st.warning("⚠️ Enter API Key to enable Chatbot.")
+            st.warning("Enter an API key to enable the chatbot.")
         
         st.markdown("---")
-        st.markdown("### ℹ️ About")
+        st.markdown("### About")
         st.info(
             "**NutriAI** uses Deep Learning to recognize Indonesian food "
             "and Gemini AI for personalized nutrition consultation."
@@ -56,8 +238,21 @@ def render_sidebar():
 
 def render_hero():
     """Renders the main hero section."""
-    st.markdown('<h1 class="hero-title">NutriAI</h1>', unsafe_allow_html=True)
-    st.markdown('<p class="hero-sub">AI-Powered Nutrition Analysis & Consultation</p>', unsafe_allow_html=True)
+    st.markdown("""
+    <section class="nutri-hero">
+        <div class="nutri-eyebrow">Indonesian food intelligence</div>
+        <h1 class="nutri-title">NutriAI</h1>
+        <p class="nutri-subtitle">
+            Upload a food photo, identify the dish, review nutrition estimates,
+            and ask an AI nutritionist for practical guidance.
+        </p>
+        <div class="hero-pills">
+            <span class="hero-pill">35 local food classes</span>
+            <span class="hero-pill">Nutrition estimate</span>
+            <span class="hero-pill">Gemini consultation</span>
+        </div>
+    </section>
+    """, unsafe_allow_html=True)
 
 def render_results(img, hasil):
     """Renders the analysis results."""
@@ -75,26 +270,33 @@ def render_results(img, hasil):
         """, unsafe_allow_html=True)
 
     with col_stats:
-        st.markdown("### 📊 Nutrition Facts")
+        st.markdown('<div class="section-eyebrow">Analysis result</div>', unsafe_allow_html=True)
+        st.markdown('<h2 class="section-title">Nutrition facts</h2>', unsafe_allow_html=True)
         
         daily_pct = hasil["kalori_pct_daily"]
         st.markdown(f"""
-        <div style="background: #FFF3E0; padding: 20px; border-radius: 12px; border: 1px solid #FFE0B2; margin-bottom: 20px;">
-            <div style="font-size: 0.9rem; color: #E65100; font-weight: 600; text-transform: uppercase;">Energy</div>
-            <div style="font-size: 2.2rem; font-weight: 800; color: #E65100; line-height: 1;">{hasil['kalori']} <span style="font-size: 1rem;">kcal</span></div>
-            <div style="font-size: 0.85rem; color: #EF6C00; margin-top: 8px;">
-                ≈ {daily_pct:.1f}% of daily needs ({TARGET_KAL_HARIAN} kcal)
+        <div class="energy-card">
+            <div class="energy-label">Energy</div>
+            <div class="energy-value">{hasil['kalori']} <span style="font-size: 1rem;">kcal</span></div>
+            <div class="energy-note">
+                Approximately {daily_pct:.1f}% of daily needs ({TARGET_KAL_HARIAN} kcal)
             </div>
-            <div style="background: #FFCC80; height: 6px; border-radius: 3px; margin-top: 8px; width: 100%;">
-                <div style="background: #EF6C00; height: 100%; border-radius: 3px; width: {min(daily_pct, 100)}%;"></div>
+            <div class="energy-track">
+                <div class="energy-fill" style="width: {min(daily_pct, 100)}%;"></div>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-        st.info(f"💡 **AI Insight:** {hasil['advice']}")
+        st.markdown(f"""
+        <div class="insight-card">
+            <strong>AI insight</strong><br>
+            {hasil['advice']}
+        </div>
+        """, unsafe_allow_html=True)
 
     # Macros
-    st.markdown("### 🥗 Macronutrients")
+    st.markdown('<div class="section-eyebrow">Macro composition</div>', unsafe_allow_html=True)
+    st.markdown('<h2 class="section-title">Macronutrients</h2>', unsafe_allow_html=True)
     m1, m2, m3 = st.columns(3)
     
     with m1:
@@ -129,8 +331,9 @@ def render_results(img, hasil):
 
 def render_chatbot(api_key, hasil):
     """Renders the chatbot section."""
-    st.markdown("---")
-    st.subheader("💬 AI Nutritionist Chat")
+    st.markdown('<div class="chat-panel">', unsafe_allow_html=True)
+    st.markdown('<div class="section-eyebrow">Ask follow-up questions</div>', unsafe_allow_html=True)
+    st.markdown('<h2 class="section-title">AI nutritionist chat</h2>', unsafe_allow_html=True)
     
     if "messages" not in st.session_state:
         st.session_state.messages = []
@@ -147,17 +350,17 @@ def render_chatbot(api_key, hasil):
 
     remaining_quota = MAX_CHAT_QUESTIONS - st.session_state.chat_count
     if remaining_quota > 0:
-        st.info(f"💡 You have **{remaining_quota}** questions remaining in this session.")
+        st.info(f"You have **{remaining_quota}** questions remaining in this session.")
         chat_input_placeholder = "Ask about this food (e.g., 'Is this good for a keto diet?')"
         chat_disabled = False
     else:
-        st.warning("⚠️ You have reached the maximum question limit for this session.")
+        st.warning("You have reached the maximum question limit for this session.")
         chat_input_placeholder = "Session limit reached."
         chat_disabled = True
 
     if prompt := st.chat_input(chat_input_placeholder, disabled=chat_disabled):
         if not api_key:
-            st.error("❌ Please enter your Gemini API Key in the sidebar first.")
+            st.error("Please enter your Gemini API Key in the sidebar first.")
         else:
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
@@ -206,13 +409,14 @@ def render_chatbot(api_key, hasil):
                         st.session_state.chat_count += 1
                     except Exception as e:
                         st.session_state.messages.pop()
-                        st.error(f"❌ Gemini API Error: {e}")
+                        st.error(f"Gemini API Error: {e}")
     
     if st.session_state.messages:
-        if st.button("🗑️ Clear Chat History"):
+        if st.button("Clear chat history"):
             st.session_state.messages = []
             st.session_state.chat_count = 0
             st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # =========================
 # MAIN APP FLOW
@@ -224,9 +428,18 @@ def main():
     # Load model once at start
     model = load_model_safe()
     
+    st.markdown("""
+    <div class="upload-panel">
+        <div class="section-eyebrow">Start analysis</div>
+        <h2 class="section-title">Upload a food image</h2>
+        <p class="section-copy">Use a clear, centered image of one dish for the best prediction quality.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
     uploaded_image = st.file_uploader(
-        "📷 Upload food image (JPG / PNG)",
-        type=["png", "jpg", "jpeg"]
+        "Upload food image (JPG / PNG)",
+        type=["png", "jpg", "jpeg"],
+        label_visibility="collapsed"
     )
 
     if uploaded_image is not None:
@@ -243,7 +456,7 @@ def main():
             with col_warn:
                 st.markdown(f"""
                 <div class="warning-card">
-                    <div class="warning-title">⚠️ Makanan Kurang Jelas / Tidak Dikenali</div>
+                    <div class="warning-title">Makanan Kurang Jelas / Tidak Dikenali</div>
                     <p style="color: #92400E; font-size: 0.95rem; margin-bottom: 12px;">
                         Tingkat keyakinan model hanya <b>{hasil['confidence']*100:.1f}%</b> (di bawah batas minimum 45%).
                     </p>
@@ -263,13 +476,19 @@ def main():
             render_chatbot(api_key, hasil)
         
     else:
-        st.info("⬆️ Start by uploading a food photo above. Supported: JPG, PNG.")
-        st.markdown("#### Try scanning:")
-        c1, c2, c3, c4 = st.columns(4)
-        with c1: st.caption("🍗 Fried Chicken"); st.caption("Satay")
-        with c2: st.caption("🍜 Chicken Noodles"); st.caption("Meatballs")
-        with c3: st.caption("🍲 Beef Rendang"); st.caption("Fried Rice")
-        with c4: st.caption("🥞 Sweet Martabak"); st.caption("Omelette")
+        st.info("Start by uploading a food photo above. Supported formats: JPG and PNG.")
+        st.markdown("""
+        <div class="sample-grid">
+            <span class="sample-chip">Fried chicken</span>
+            <span class="sample-chip">Satay</span>
+            <span class="sample-chip">Chicken noodles</span>
+            <span class="sample-chip">Meatballs</span>
+            <span class="sample-chip">Beef rendang</span>
+            <span class="sample-chip">Fried rice</span>
+            <span class="sample-chip">Sweet martabak</span>
+            <span class="sample-chip">Omelette</span>
+        </div>
+        """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
