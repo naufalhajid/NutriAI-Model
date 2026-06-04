@@ -1,113 +1,126 @@
-# NutriAI: Model Klasifikasi Gambar Makanan
+# NutriAI — Indonesian Food Recognition & Nutrition Intelligence
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+> Snap a photo of your meal. Know exactly what's in it. Ask an AI nutritionist.
 
-Repositori ini berisi kode dan notebook untuk pengembangan, pelatihan, dan evaluasi model *deep learning* yang bertujuan untuk mengklasifikasikan gambar makanan. Model ini dibangun menggunakan arsitektur Convolutional Neural Network (CNN) dengan TensorFlow dan Keras. Tujuan utamanya adalah untuk menciptakan model yang akurat dan efisien yang dapat diimplementasikan pada perangkat mobile atau edge, sehingga model akhir diekspor ke format TensorFlow Lite (`.tflite`).
-
-## Daftar Isi
-- [Pendahuluan](#pendahuluan)
-- [Fitur Utama](#fitur-utama)
-- [Arsitektur Model](#arsitektur-model)
-- [Dataset](#dataset)
-- [Teknologi yang Digunakan](#teknologi-yang-digunakan)
-- [Cara Menjalankan](#cara-menjalankan)
-- [Hasil dan Evaluasi](#hasil-dan-evaluasi)
-
-## Pendahuluan
-**NutriAI** adalah aplikasi cerdas yang menggabungkan *Computer Vision* dan *Generative AI* untuk membantu pengguna memahami kandungan gizi makanan mereka. 
-
-Sistem ini tidak hanya mendeteksi jenis makanan dari gambar menggunakan **TensorFlow/Keras**, tetapi juga menyediakan konsultasi gizi interaktif melalui **Google Gemini AI**.
+Millions of Indonesians eat traditional food daily — but most nutrition apps only cover Western meals. NutriAI closes that gap: a deep learning model trained specifically on **35 Indonesian food classes**, paired with a conversational AI nutritionist powered by Gemini.
 
 ---
 
-##  Fitur Utama
+## Demo
 
-### 1.  Klasifikasi Makanan (Computer Vision)
-- **Model Deep Learning**: Menggunakan arsitektur CNN (Convolutional Neural Network) yang dilatih khusus pada dataset makanan Indonesia.
-- **Deteksi Otomatis**: Mengenali berbagai jenis makanan populer (misal: Sate Ayam, Rendang, Bakso, dll).
-- **Estimasi Kalori & Makro**: Menampilkan estimasi energi (kkal), protein, lemak, dan karbohidrat per porsi standar.
+<p align="center">
+  <img src="docs/assets/nutriai_hero.png" alt="NutriAI homepage — 35 local food classes, nutrition estimate, Gemini consultation" width="80%">
+</p>
 
-### 2.  Konsultasi Gizi (AI Chatbot)
-- **Integrasi Gemini AI**: Menggunakan model Google untuk analisis lebih dalam.
-- **Tanya Jawab Interaktif**: Pengguna bisa bertanya, "Apakah makanan ini aman untuk diet keto?" atau "Bagaimana cara membakar kalori ini?".
-- **Konteks Otomatis**: Chatbot otomatis "tahu" makanan apa yang baru saja Anda scan, sehingga jawaban lebih spesifik.
+<p align="center">
+  <img src="docs/assets/nutriai_result.png" alt="NutriAI detecting Bakso at 100% confidence — showing 218 kcal, fat/carbs/protein breakdown, and AI insight" width="60%">
+</p>
 
-### 3.  Visualisasi & Edukasi
-- **Progress Bar Makronutrisi**: Visualisasi komposisi lemak, karbo, dan protein.
-- **Analisis Kebutuhan Harian**: Membandingkan kalori makanan dengan rata-rata kebutuhan harian (2000 kkal).
+<p align="center"><em>
+  Bakso detected at 100% confidence — 218 kcal, 60% fat, 15% carbs, 25% protein. AI insight generated in context.
+</em></p>
 
----
-## Arsitektur Model
-Model ini dibangun menggunakan Keras Sequential API dengan arsitektur CNN yang efektif untuk tugas klasifikasi gambar. Strukturnya terdiri dari beberapa lapisan konvolusi untuk ekstraksi fitur, lapisan pooling untuk reduksi dimensi, lapisan dropout untuk mencegah overfitting, dan diakhiri dengan lapisan dense untuk klasifikasi.
+<p align="center">
+  <img src="docs/assets/nutriai_chat.png" alt="NutriAI AI nutritionist chat interface — ask follow-up questions about the detected food" width="80%">
+</p>
 
-*(Catatan: Untuk detail arsitektur yang spesifik, silakan merujuk ke dalam file `NutriAI_Model.ipynb`.)*
-
-## Dataset
-Model ini dilatih menggunakan dataset gambar makanan.
-
-- **Sumber Dataset**: Kaggle, dan dataset pribadi
-- **Pra-pemrosesan**: Gambar di-rescale dan di-augmentasi (rotasi, zoom, flip horizontal) untuk meningkatkan ketahanan model.
+<p align="center"><em>
+  After detection, ask the AI nutritionist anything about the food: diet suitability, calorie burn, portion advice.
+</em></p>
 
 ---
 
-## Teknologi yang Digunakan
+## The Problem
 
-- **Frontend**: [Streamlit](https://streamlit.io/) (Framework UI Python)
-- **AI Core**:
-  - **TensorFlow & Keras**: Untuk model klasifikasi gambar (`model.keras`).
-  - **Google Generative AI (Gemini)**: Untuk fitur chatbot cerdas.
-- **Data Processing**: NumPy, Pillow (PIL).
+Indonesia has over 270 million people, yet:
+- Obesity rates have nearly doubled in the last decade
+- Most nutrition apps don't recognise Indonesian food at all
+- Nutrition labels are missing from street food — which is where most people eat
+
+NutriAI makes evidence-based nutrition accessible to anyone with a phone camera.
 
 ---
 
-## Cara Menjalankan
-### Menjalankan Aplikasi Streamlit
-1.  **Buat dan aktifkan virtual environment**
-    ```sh
-    python -m venv .venv
-    .venv\Scripts\activate
-    ```
+## What It Does
 
-2.  **Install dependency**
-    ```sh
-    pip install -r requirements.txt
-    ```
+**1. Identify Indonesian food from a photo**
+Upload any image. The CNN model classifies it against 35 Indonesian dishes (bakso, rendang, sate, nasi goreng, and more) and returns:
+- Calories per standard portion
+- Macronutrient breakdown (fat / carbs / protein)
+- Percentage of daily calorie needs
 
-3.  **Opsional: aktifkan Gemini chatbot**
-    Buat file `.streamlit/secrets.toml`, lalu isi:
-    ```toml
-    GEMINI_API_KEY = "isi_api_key_anda"
-    ```
-    Jika file ini tidak ada, aplikasi tetap bisa dipakai untuk klasifikasi gambar, dan API key dapat diisi melalui sidebar.
+**2. Ask an AI nutritionist follow-up questions**
+After detection, a Gemini-powered chatbot automatically knows what food you just scanned:
+> *"Is rendang safe if I'm on a keto diet?"*
+> *"How much exercise burns off one portion of martabak manis?"*
 
-4.  **Jalankan aplikasi**
-    ```sh
-    streamlit run app.py
-    ```
+**3. Confidence threshold filter**
+Results below 45% confidence are suppressed and the user is guided to retake the photo — preventing misleading nutrition data.
 
-### Menjalankan Notebook Training
-1.  Jalankan Jupyter Notebook:
-    ```sh
-    jupyter notebook
-    ```
-2.  Buka `Training Dataset/NutriAI_Model.ipynb` dan jalankan sel secara berurutan.
-3.  Pastikan path dataset mengarah ke `Dataset Makanan New`.
-4.  Hasil training dapat diekspor ke `model.keras`, `model.h5`, atau `model.tflite` sesuai kebutuhan deployment.
+---
 
-## Hasil dan Evaluasi
-Kinerja model dievaluasi pada dataset validasi untuk mengukur kemampuannya dalam melakukan generalisasi.
+## Model Architecture
 
-- **Akurasi & Loss**:
-  <img width="1001" height="470" alt="Training and Validation" src="https://github.com/user-attachments/assets/a707387b-9cfa-4680-9555-ec3db3df1bdb" />
+Built with **TensorFlow / Keras** using a CNN architecture trained from scratch on a custom dataset of Indonesian food images.
 
-- **Classification Report**:
-  Laporan ini memberikan rincian metrik *precision*, *recall*, dan *f1-score* untuk setiap kelas.
-  <img width="880" height="762" alt="Classification Report" src="https://github.com/user-attachments/assets/c9156e70-a67d-454d-91fb-dbb6bb961515" />
+- **Input size:** 320 × 320 pixels
+- **Training augmentation:** rotation, zoom, horizontal flip
+- **Dataset sources:** Kaggle + custom-collected data
+- **Export formats:** `.keras`, `.h5`, `.tflite` (mobile-ready)
 
-- **Confusion Matrix**:
-  Visualisasi ini membantu memahami kelas mana yang sering salah diklasifikasikan oleh model.
-<img width="1407" height="1189" alt="confusin matrix" src="https://github.com/user-attachments/assets/ba714d99-2e18-4a54-a976-5b7a8b2aa4f9" />
+| Metric | Result |
+|---|---|
+| Classes | 35 Indonesian food categories |
+| Model size | TFLite-optimised for mobile deployment |
+| Confidence threshold | 45% (below this, no result is shown) |
 
+See `Training Dataset/NutriAI_Model.ipynb` for full training details, accuracy curves, and confusion matrix.
 
+---
 
+## Tech Stack
 
+| Layer | Technology |
+|---|---|
+| Model | TensorFlow 2.x, Keras (CNN) |
+| Inference | `.keras` model, TFLite export |
+| AI Chatbot | Google Gemini 2.0 Flash Lite |
+| Frontend | Streamlit |
+| Image processing | Pillow (PIL), NumPy |
+
+---
+
+## Quick Start
+
+```bash
+# 1. Clone and set up environment
+git clone https://github.com/naufalhajid/NutriAI-Model.git
+cd NutriAI-Model
+python -m venv .venv
+.venv\Scripts\activate  # Windows
+# source .venv/bin/activate  # macOS/Linux
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. (Optional) Enable Gemini chatbot
+# Create .streamlit/secrets.toml and add:
+# GEMINI_API_KEY = "your_api_key"
+
+# 4. Run the app
+streamlit run app.py
+```
+
+The app also works without a Gemini API key — food detection runs fully offline.
+
+---
+
+## Supported Food Classes
+
+Ayam Geprek · Ayam Pop · Ayam Goreng · Bakso · Batagor · Bika Ambon · Cendol · Dadar Gulung · Dendeng · Gorengan · Gulai Ikan · Gulai Tambusu · Gulai Tunjang · Ikan Goreng · Ketoprak · Klepon · Kue Cubit · Martabak Manis · Martabak Telur · Mie Ayam · Nasi Goreng · Nasi Putih · Onde Onde · Pempek · Pepes Ikan · Pisang Ijo · Putu Ayu · Rendang · Roti Bakar · Sate Ayam · Soto Ayam · Sup Ayam · Telur Balado · Telur Dadar · Tempe Bacem
+
+---
+
+## License
+
+MIT
