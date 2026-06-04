@@ -388,7 +388,7 @@ def render_chatbot(api_key, hasil):
                         
                         # Initialize model with system instruction
                         model_genai = genai.GenerativeModel(
-                            model_name='gemini-1.5-flash-8b',
+                            model_name='gemini-2.0-flash',
                             system_instruction=system_instruction
                         )
                         
