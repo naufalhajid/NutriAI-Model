@@ -1,6 +1,4 @@
 import os
-import re
-import time
 from PIL import Image
 import streamlit as st
 import google.generativeai as genai
@@ -390,7 +388,7 @@ def render_chatbot(api_key, hasil):
                         
                         # Initialize model with system instruction
                         model_genai = genai.GenerativeModel(
-                            model_name='gemini-1.5-flash',
+                            model_name='gemini-1.5-flash-8b',
                             system_instruction=system_instruction
                         )
                         
@@ -404,43 +402,11 @@ def render_chatbot(api_key, hasil):
                         
                         # Start chat with history and send message
                         chat = model_genai.start_chat(history=formatted_history)
+                        response = chat.send_message(prompt)
                         
-                        # Send message with retry, delay parsing, and exponential backoff
-                        max_retries = 3
-                        base_delay = 2.0
-                        response = None
-                        
-                        for attempt in range(max_retries + 1):
-                            try:
-                                response = chat.send_message(prompt)
-                                break
-                            except Exception as e:
-                                err_msg = str(e)
-                                is_rate_limit = any(
-                                    x in err_msg.lower() 
-                                    for x in ["429", "resource_exhausted", "quota", "rate limit", "limit"]
-                                )
-                                
-                                if is_rate_limit and attempt < max_retries:
-                                    # 1. Look for specific delay suggested in error message (e.g. Please retry in X.Xs)
-                                    match = re.search(r"retry\s+in\s+([0-9.]+)\s*s", err_msg, re.IGNORECASE)
-                                    if match:
-                                        wait_time = float(match.group(1)) + 0.5
-                                    else:
-                                        wait_time = base_delay * (2 ** attempt)
-                                    
-                                    # Show wait message via st.warning
-                                    st.warning(f"Batas permintaan (rate limit) tercapai. Menunggu {wait_time:.2f} detik sebelum mencoba kembali (Percobaan {attempt + 1}/{max_retries})...")
-                                    time.sleep(wait_time)
-                                else:
-                                    raise e
-                        
-                        if response:
-                            st.markdown(response.text)
-                            st.session_state.messages.append({"role": "assistant", "content": response.text})
-                            st.session_state.chat_count += 1
-                        else:
-                            raise Exception("Gagal mendapatkan respon dari Gemini API setelah beberapa percobaan.")
+                        st.markdown(response.text)
+                        st.session_state.messages.append({"role": "assistant", "content": response.text})
+                        st.session_state.chat_count += 1
                     except Exception as e:
                         st.session_state.messages.pop()
                         st.error(f"Gemini API Error: {e}")
